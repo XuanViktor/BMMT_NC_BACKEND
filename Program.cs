@@ -1,15 +1,24 @@
 ﻿using BMMT_NC.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ 1. Đăng ký DbContext với chuỗi kết nối
+// ✅ 1. Cấu hình DbContext + Ghi log SQL
 builder.Services.AddDbContext<CsdlContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
+           .LogTo(Console.WriteLine, LogLevel.Information)  // Log SQL ra console
+           .EnableSensitiveDataLogging()                    // Cho phép log dữ liệu đầu vào
+);
 
-// ✅ 2. Đăng ký Controller
-builder.Services.AddControllers();
+// ✅ 2. Cấu hình Controller & MVC
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    });
+
 builder.Services.AddControllersWithViews();
 
 // ✅ 3. Cấu hình Cookie Authentication
@@ -21,12 +30,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
         if (builder.Environment.IsDevelopment())
         {
-            options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Cho phép HTTP khi dev
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None;
             options.Cookie.SameSite = SameSiteMode.Lax;
         }
         else
         {
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Bắt buộc HTTPS khi production
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.Cookie.SameSite = SameSiteMode.None;
         }
 
@@ -38,40 +47,57 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // ✅ 4. Cấu hình CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", corsBuilder =>
     {
-        builder.SetIsOriginAllowed(_ => true)
-               .AllowAnyMethod()
-               .AllowAnyHeader()
-               .AllowCredentials();
+        corsBuilder.SetIsOriginAllowed(_ => true)
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials();
     });
 });
 
-// ✅ 5. Build app
 var app = builder.Build();
 
-// ✅ 6. Bỏ bắt buộc HTTPS (tùy)
+// ✅ 5. Test kết nối CSDL lúc khởi động
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CsdlContext>();
+    try
+    {
+        Console.WriteLine("⏳ Đang kiểm tra kết nối đến SQL Server...");
+        if (db.Database.CanConnect())
+        {
+            Console.WriteLine("✅ Kết nối CSDL thành công!");
+        }
+        else
+        {
+            Console.WriteLine("❌ Không thể kết nối đến CSDL!");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Lỗi khi kết nối CSDL: " + ex.Message);
+    }
+}
+
+// ✅ 6. Middleware pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-// ❌ KHÔNG bắt buộc HTTPS trong local
-// app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
 
 app.UseCors("AllowAll");
 
-app.UseAuthentication();
+app.UseAuthentication(); // ⚠️ Bắt buộc để cookie hoạt động
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Thêm lại route mặc định cho MVC
+// ✅ Map route mặc định cho MVC
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

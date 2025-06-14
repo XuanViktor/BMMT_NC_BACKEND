@@ -9,6 +9,7 @@ namespace BMMT_NC.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly CsdlContext _context;
@@ -20,11 +21,10 @@ namespace BMMT_NC.Controllers
 
         // GET: api/Notification/user/5
         [HttpGet("user/{userId}")]
-        [Authorize]
         public async Task<ActionResult<IEnumerable<Notification>>> GetUserNotifications(int userId)
         {
             var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            
+
             if (currentUserId != userId)
             {
                 return Forbid();
@@ -39,7 +39,6 @@ namespace BMMT_NC.Controllers
 
         // GET: api/Notification/5
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<ActionResult<Notification>> GetNotification(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
@@ -62,47 +61,83 @@ namespace BMMT_NC.Controllers
 
         // POST: api/Notification
         [HttpPost]
-        [Authorize]
-        public async Task<ActionResult<Notification>> CreateNotification(Notification notification)
+        public async Task<ActionResult<Notification>> CreateNotification(NotificationDto notification)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            
+
             if (notification.UserId != userId)
             {
                 return Forbid();
             }
 
             notification.CreatedAt = DateTime.Now;
-            _context.Notifications.Add(notification);
+            var newNotification = new Notification
+            {
+                UserId = notification.UserId,
+                Content = notification.Content,
+                IsRead = notification.IsRead ?? false,
+                CreatedAt = notification.CreatedAt
+            };
+            _context.Notifications.Add(newNotification);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetNotification), new { id = notification.NotificationId }, notification);
+            return CreatedAtAction(nameof(GetNotification), new { id = newNotification.NotificationId }, notification);
         }
 
-        // PUT: api/Notification/5
-        [HttpPut("{id}")]
+        // Update the `Forbid` calls to use `JsonResult` explicitly for returning JSON responses.
+
+        [HttpDelete("{id}")]
         [Authorize]
-        public async Task<IActionResult> UpdateNotification(int id, Notification notification)
+        public async Task<IActionResult> DeleteNotification(int id)
         {
-            if (id != notification.NotificationId)
-            {
-                return BadRequest();
-            }
-
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var existingNotification = await _context.Notifications.FindAsync(id);
+            var notification = await _context.Notifications.FindAsync(id);
 
-            if (existingNotification == null)
+            if (notification == null)
             {
-                return NotFound();
+                return NotFound(new JsonResult(new { message = "Notification not found." }));
             }
 
-            if (existingNotification.UserId != userId)
+            if (notification.UserId != userId)
             {
-                return Forbid();
+                return new JsonResult(new { message = "You are not authorized to delete this notification." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+
+                };
             }
 
-            _context.Entry(notification).State = EntityState.Modified;
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Notification deleted successfully." });
+        }
+
+
+        [HttpDelete("user/{userId}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAllUserNotifications(int userId)
+        {
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+            if (currentUserId != userId)
+            {
+                return new JsonResult(new { message = "You are not authorized to delete notifications for this user." })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden
+                };
+            }
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .ToListAsync();
+
+            if (notifications == null || !notifications.Any())
+            {
+                return NotFound(new JsonResult(new { message = "No notifications found for this user." }));
+            }
+
+            _context.Notifications.RemoveRange(notifications);
 
             try
             {
@@ -110,68 +145,21 @@ namespace BMMT_NC.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!NotificationExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return StatusCode(500, new JsonResult(new { message = "An error occurred while deleting notifications." }));
             }
 
-            return NoContent();
+            return Ok(new JsonResult(new { message = "All notifications for this user have been deleted." }));
         }
 
-        // DELETE: api/Notification/5
-        [HttpDelete("{id}")]
-        [Authorize]
-        public async Task<IActionResult> DeleteNotification(int id)
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var notification = await _context.Notifications.FindAsync(id);
-            
-            if (notification == null)
-            {
-                return NotFound();
-            }
 
-            if (notification.UserId != userId)
-            {
-                return Forbid();
-            }
-
-            _context.Notifications.Remove(notification);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // DELETE: api/Notification/user/5
-        [HttpDelete("user/{userId}")]
-        [Authorize]
-        public async Task<IActionResult> DeleteAllUserNotifications(int userId)
-        {
-            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            
-            if (currentUserId != userId)
-            {
-                return Forbid();
-            }
-
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == userId)
-                .ToListAsync();
-
-            _context.Notifications.RemoveRange(notifications);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool NotificationExists(int id)
-        {
-            return _context.Notifications.Any(e => e.NotificationId == id);
-        }
     }
-} 
+
+    public class NotificationDto
+    {
+        public int UserId { get; set; }
+        public string Content { get; set; } = null!;
+        public bool? IsRead { get; set; }
+        public DateTime? CreatedAt { get; set; }
+    }
+
+}

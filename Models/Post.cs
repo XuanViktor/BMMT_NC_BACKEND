@@ -19,15 +19,13 @@ public partial class Post
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
     public virtual Photo? Photo { get; set; }
 
     public virtual ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
 
-    public User? User { get; set; }
+    public virtual User User { get; set; } = null!;
 
     public virtual Video? Video { get; set; }
 
