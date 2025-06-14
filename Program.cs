@@ -1,52 +1,79 @@
 ﻿using BMMT_NC.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ 1. Đăng ký DbContext
+// ✅ 1. Đăng ký DbContext với chuỗi kết nối
 builder.Services.AddDbContext<CsdlContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
-// ✅ 2. Đăng ký Controller + View
+// ✅ 2. Đăng ký Controller
+builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
-builder.Services.AddControllers(); // Cho API
 
-// ✅ 3. Đăng ký Authentication
+// ✅ 3. Cấu hình Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
+        options.Cookie.Name = "BMMT.Auth";
+        options.Cookie.HttpOnly = true;
+
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Cho phép HTTP khi dev
+            options.Cookie.SameSite = SameSiteMode.Lax;
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Bắt buộc HTTPS khi production
+            options.Cookie.SameSite = SameSiteMode.None;
+        }
+
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.LoginPath = "/api/auth/login";
         options.LogoutPath = "/api/auth/logout";
-        options.Cookie.Name = "AuthCookie";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
     });
 
-// ✅ 4. Build App sau khi đăng ký service xong
+// ✅ 4. Cấu hình CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.SetIsOriginAllowed(_ => true)
+               .AllowAnyMethod()
+               .AllowAnyHeader()
+               .AllowCredentials();
+    });
+});
+
+// ✅ 5. Build app
 var app = builder.Build();
 
-// ✅ 5. Cấu hình Middleware
+// ✅ 6. Bỏ bắt buộc HTTPS (tùy)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// ❌ KHÔNG bắt buộc HTTPS trong local
+// app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication(); // phải đặt trước UseAuthorization
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
-// ✅ 6. Map route cho API controller
 app.MapControllers();
 
-// ✅ 7. Map route cho MVC Razor (nếu có)
+// Thêm lại route mặc định cho MVC
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// ✅ 8. Run App
 app.Run();

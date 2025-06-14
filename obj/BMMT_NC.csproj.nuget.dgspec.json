@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC.csproj": {}
+    "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\BMMT_NC.csproj": {}
   },
   "projects": {
-    "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC.csproj": {
+    "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\BMMT_NC.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC.csproj",
+        "projectUniqueName": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\BMMT_NC.csproj",
         "projectName": "BMMT_NC",
-        "projectPath": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC.csproj",
+        "projectPath": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\BMMT_NC.csproj",
         "packagesPath": "C:\\Users\\dinhx\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\obj\\",
+        "outputPath": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\dinhx\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -39,7 +39,8 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net8.0": {
@@ -67,6 +68,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.15, 8.0.15]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -75,7 +94,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.401/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

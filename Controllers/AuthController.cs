@@ -1,184 +1,169 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Text.RegularExpressions;
+using System.Security.Claims;
 using BMMT_NC.Models;
-using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
 
-namespace BMMT_NC.Controllers
+namespace BMMT_NC_BACKEND.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly CsdlContext _db;
+        private readonly CsdlContext _context;
 
-        public AuthController(CsdlContext db)
+        public AuthController(CsdlContext context)
         {
-            _db = db;
-        }
-
-        // DTO đăng ký
-        public class RegisterDto
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string? Name { get; set; }
-            public string? Email { get; set; }
+            _context = context;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            dto.Email = dto.Email?.Trim().ToLower();
-
-            if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username.Length < 6 ||
-                !Regex.IsMatch(dto.Username, @"^[a-zA-Z0-9_.-]+$"))
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Tên đăng nhập phải có ít nhất 6 ký tự và chỉ chứa chữ, số, dấu _ . -");
+                return BadRequest(ModelState);
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8 ||
-                !Regex.IsMatch(dto.Password, @"[A-Z]") ||
-                !Regex.IsMatch(dto.Password, @"[a-z]") ||
-                !Regex.IsMatch(dto.Password, @"[0-9]") ||
-                !Regex.IsMatch(dto.Password, @"[\W_]"))
+            // Check if username already exists
+            if (await _context.Users.AnyAsync(u => u.Username == model.Username))
             {
-                return BadRequest("Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
+                return BadRequest("Username already exists");
             }
 
-            if (await _db.Users.AnyAsync(u => u.Username == dto.Username))
+            // Check if email already exists
+            if (await _context.Users.AnyAsync(u => u.Email == model.Email))
             {
-                return BadRequest("Tên đăng nhập đã tồn tại.");
+                return BadRequest("Email already exists");
             }
 
-            if (!string.IsNullOrEmpty(dto.Email) &&
-                await _db.Users.AnyAsync(u => u.Email == dto.Email))
+            // Create new user
+            var user = new User
             {
-                return BadRequest("Email đã được sử dụng.");
-            }
-
-            string hashedPassword = PasswordHasher.HashPassword(dto.Password);
-
-            var newUser = new User
-            {
-                Username = dto.Username,
-                Password = hashedPassword,
-                Name = dto.Name,
-                Email = dto.Email ?? "",
-                CreatedAt = DateTime.Now
+                Username = model.Username,
+                Email = model.Email,
+                Password = model.Password,
+                Name = model.FullName,
+                CreatedAt = DateTime.UtcNow
             };
 
-            _db.Users.Add(newUser);
-            await _db.SaveChangesAsync();
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Đăng ký thành công!" });
-        }
-
-        // DTO đăng nhập
-        public class LoginDto
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
+            return Ok(new
+            {
+                message = "Registration successful",
+                user = new
+                {
+                    id = user.UserId,
+                    username = user.Username,
+                    email = user.Email,
+                    name = user.Name
+                }
+            });
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            string hashedPassword = PasswordHasher.HashPassword(dto.Password);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            var user = await _db.Users.FirstOrDefaultAsync(x =>
-                x.Username == dto.Username && x.Password == hashedPassword);
+            // Find user by username
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == model.Username);
 
             if (user == null)
             {
-                return Unauthorized("Sai tên đăng nhập hoặc mật khẩu!");
+                return Unauthorized("Invalid username or password");
             }
 
-            var claims = new List<Claim>
+            // Verify password
+            if (user.Password != model.Password)
             {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim("UserId", user.UserId.ToString())
-            };
+                return Unauthorized("Invalid username or password");
+            }
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            return Ok(new { message = "Đăng nhập thành công!" });
+            return Ok(new
+            {
+                message = "Login successful",
+                user = new
+                {
+                    id = user.UserId,
+                    username = user.Username,
+                    email = user.Email,
+                    name = user.Name
+                }
+            });
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Ok(new { message = "Đăng xuất thành công!" });
+            return Ok(new { message = "Logout successful" });
         }
 
-        public class ChangePasswordDto
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser()
         {
-            public string OldPassword { get; set; }
-            public string NewPassword { get; set; }
-        }
-
-        [Authorize]
-        [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
-        {
-            var username = User.Identity?.Name;
-
-            if (username == null)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized("Không xác định người dùng.");
+                return Unauthorized();
             }
 
-            var user = await _db.Users.FirstOrDefaultAsync(x => x.Username == username);
+            var user = await _context.Users
+                .Select(u => new
+                {
+                    u.UserId,
+                    u.Username,
+                    u.Email,
+                    u.Name,
+                    u.Bio,
+                    u.ProfilePhotoUrl,
+                    u.CreatedAt
+                })
+                .FirstOrDefaultAsync(u => u.UserId == int.Parse(userId));
+
             if (user == null)
             {
-                return Unauthorized("Tài khoản không tồn tại.");
+                return NotFound("User not found");
             }
 
-            // So sánh mật khẩu cũ
-            var hashedOld = PasswordHasher.HashPassword(dto.OldPassword);
-            if (user.Password != hashedOld)
-            {
-                return BadRequest("Mật khẩu cũ không đúng!");
-            }
-
-            // Validate mật khẩu mới
-            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8 ||
-                !Regex.IsMatch(dto.NewPassword, @"[A-Z]") ||
-                !Regex.IsMatch(dto.NewPassword, @"[a-z]") ||
-                !Regex.IsMatch(dto.NewPassword, @"[0-9]") ||
-                !Regex.IsMatch(dto.NewPassword, @"[\W_]"))
-            {
-                return BadRequest("Mật khẩu mới phải ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.");
-            }
-
-            // Cập nhật mật khẩu
-            user.Password = PasswordHasher.HashPassword(dto.NewPassword);
-            await _db.SaveChangesAsync();
-
-            // Đăng xuất bắt buộc
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            return Ok(new { message = "Đổi mật khẩu thành công! Vui lòng đăng nhập lại." });
+            return Ok(user);
         }
-
     }
 
-    // Class hash mật khẩu
-    public static class PasswordHasher
+    public class RegisterModel
     {
-        public static string HashPassword(string password)
-        {
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
-        }
+        [Required]
+        [StringLength(50)]
+        public string Username { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string Password { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string FullName { get; set; }
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        public string Username { get; set; }
+
+        [Required]
+        public string Password { get; set; }
     }
 }
