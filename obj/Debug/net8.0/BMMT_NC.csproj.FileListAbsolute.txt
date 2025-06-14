@@ -167,3 +167,6 @@ C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\refint\BMMT
 C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\BMMT_NC.pdb
 C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\BMMT_NC.genruntimeconfig.cache
 C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\ref\BMMT_NC.dll
+C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\bin\Debug\net8.0\BMMT_NC.staticwebassets.endpoints.json
+C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\dinhx\source\repos\BMMT_NC\BMMT_NC_BACKEND\obj\Debug\net8.0\staticwebassets\msbuild.BMMT_NC.Microsoft.AspNetCore.StaticWebAssetEndpoints.props

@@ -69,24 +69,30 @@ namespace BMMT_NC_BACKEND.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            // Find user by username
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == model.Username);
-
-            if (user == null)
-            {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == model.Username);
+            if (user == null || user.Password != model.Password)
                 return Unauthorized("Invalid username or password");
-            }
 
-            // Verify password
-            if (user.Password != model.Password)
+            // ✅ Tạo cookie auth
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Email, user.Email ?? "")
+    };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            var authProps = new AuthenticationProperties
             {
-                return Unauthorized("Invalid username or password");
-            }
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            };
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
 
             return Ok(new
             {
@@ -100,6 +106,7 @@ namespace BMMT_NC_BACKEND.Controllers
                 }
             });
         }
+
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()

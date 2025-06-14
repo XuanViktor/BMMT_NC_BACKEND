@@ -2,7 +2,7 @@
   "Files": [
     {
       "Id": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\BMMT_NC.bundle.scp.css",
-      "PackagePath": "staticwebassets\\BMMT_NC.bundle.scp.css"
+      "PackagePath": "staticwebassets\\BMMT_NC.nny4896vt8.bundle.scp.css"
     },
     {
       "Id": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\wwwroot\\css\\site.css",
@@ -243,6 +243,10 @@
     {
       "Id": "C:\\Users\\dinhx\\source\\repos\\BMMT_NC\\BMMT_NC_BACKEND\\wwwroot\\lib\\jquery\\dist\\jquery.min.map",
       "PackagePath": "staticwebassets\\lib\\jquery\\dist\\jquery.min.map"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BMMT_NC.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
     },
     {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.BMMT_NC.Microsoft.AspNetCore.StaticWebAssets.props",
