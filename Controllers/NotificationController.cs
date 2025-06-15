@@ -42,21 +42,22 @@ namespace BMMT_NC.Controllers
         public async Task<ActionResult<Notification>> GetNotification(int id)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
             var notification = await _context.Notifications
-                .Include(n => n.User)
                 .FirstOrDefaultAsync(n => n.NotificationId == id);
 
             if (notification == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Notification not found." });
             }
 
-            if (notification.UserId != userId)
+            return Ok(new
             {
-                return Forbid();
-            }
-
-            return notification;
+                notification.NotificationId,
+                notification.UserId,
+                notification.Content,
+                notification.CreatedAt
+            });
         }
 
         // POST: api/Notification
@@ -84,8 +85,6 @@ namespace BMMT_NC.Controllers
             return CreatedAtAction(nameof(GetNotification), new { id = newNotification.NotificationId }, notification);
         }
 
-        // Update the `Forbid` calls to use `JsonResult` explicitly for returning JSON responses.
-
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteNotification(int id)
@@ -95,7 +94,7 @@ namespace BMMT_NC.Controllers
 
             if (notification == null)
             {
-                return NotFound(new JsonResult(new { message = "Notification not found." }));
+                return NotFound(new { message = "Notification not found." });
             }
 
             if (notification.UserId != userId)
@@ -103,7 +102,6 @@ namespace BMMT_NC.Controllers
                 return new JsonResult(new { message = "You are not authorized to delete this notification." })
                 {
                     StatusCode = StatusCodes.Status403Forbidden
-
                 };
             }
 
@@ -112,7 +110,6 @@ namespace BMMT_NC.Controllers
 
             return Ok(new { message = "Notification deleted successfully." });
         }
-
 
         [HttpDelete("user/{userId}")]
         [Authorize]
@@ -134,7 +131,7 @@ namespace BMMT_NC.Controllers
 
             if (notifications == null || !notifications.Any())
             {
-                return NotFound(new JsonResult(new { message = "No notifications found for this user." }));
+                return NotFound(new { message = "No notifications found for this user." });
             }
 
             _context.Notifications.RemoveRange(notifications);
@@ -145,13 +142,11 @@ namespace BMMT_NC.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                return StatusCode(500, new JsonResult(new { message = "An error occurred while deleting notifications." }));
+                return StatusCode(500, new { message = "An error occurred while deleting notifications." });
             }
 
-            return Ok(new JsonResult(new { message = "All notifications for this user have been deleted." }));
+            return Ok(new { message = "All notifications for this user have been deleted." });
         }
-
-
     }
 
     public class NotificationDto
