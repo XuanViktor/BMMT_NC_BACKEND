@@ -9,10 +9,6 @@ public partial class User
 
     public string Username { get; set; } = null!;
 
-    public string? Password { get; set; }
-
-    public string? Name { get; set; }
-
     public string? ProfilePhotoUrl { get; set; }
 
     public string? Bio { get; set; }
@@ -23,7 +19,9 @@ public partial class User
 
     public string? Token { get; set; }
 
-    public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    public string Name { get; set; } = null!;
+
+    public string Password { get; set; } = null!;
 
     public virtual ICollection<CommentLike> CommentLikes { get; set; } = new List<CommentLike>();
 

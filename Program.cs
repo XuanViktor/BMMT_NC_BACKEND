@@ -1,6 +1,7 @@
 ﻿using BMMT_NC.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<CsdlContext>(options =>
 
 // ✅ 2. Cấu hình Controller & MVC
 builder.Services.AddControllers();
+
 builder.Services.AddControllersWithViews();
 
 // ✅ 3. Cấu hình Cookie Authentication
@@ -49,7 +51,6 @@ builder.Services.AddCors(options =>
                    .AllowCredentials();
     });
 });
-
 
 var app = builder.Build();
 

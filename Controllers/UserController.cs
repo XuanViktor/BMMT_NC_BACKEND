@@ -52,33 +52,35 @@ namespace BMMT_NC.Controllers
 
         // PUT: api/User/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id, UserUpdateDto dto)
         {
-            if (id != user.UserId)
-            {
-                return BadRequest();
-            }
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
 
-            _context.Entry(user).State = EntityState.Modified;
+            user.Username = dto.Username ?? user.Username;
+            user.Name = dto.Name ?? user.Name;
+            user.Email = dto.Email ?? user.Email;
+            user.ProfilePhotoUrl = dto.ProfilePhotoUrl ?? user.ProfilePhotoUrl;
+            user.Bio = dto.Bio ?? user.Bio;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
-            return NoContent();
+            // Trả về object mới sau khi cập nhật
+            var updatedUser = new
+            {
+                user.UserId,
+                user.Username,
+                user.Name,
+                user.Email,
+                user.ProfilePhotoUrl,
+                user.Bio,
+                user.CreatedAt
+            };
+
+            return Ok(updatedUser); // Status 200 + object
         }
+
+
 
         // DELETE: api/User/5
         [HttpDelete("{id}")]
@@ -101,4 +103,13 @@ namespace BMMT_NC.Controllers
             return _context.Users.Any(e => e.UserId == id);
         }
     }
-} 
+}
+
+public class UserUpdateDto
+{
+    public string? Username { get; set; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
+    public string? Bio { get; set; }
+}

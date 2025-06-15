@@ -15,8 +15,6 @@ public partial class CsdlContext : DbContext
     {
     }
 
-    public virtual DbSet<Bookmark> Bookmarks { get; set; }
-
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<CommentLike> CommentLikes { get; set; }
@@ -44,38 +42,13 @@ public partial class CsdlContext : DbContext
     public virtual DbSet<Video> Videos { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=SOPHY;Initial Catalog=CSDL;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False");
+=> optionsBuilder.UseSqlServer("Data Source=SOPHY;Initial Catalog=CSDL;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Bookmark>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.PostId }).HasName("PK__bookmark__CA534F7919EEC356");
-
-            entity.ToTable("bookmarks");
-
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.PostId).HasColumnName("post_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("created_at");
-
-            entity.HasOne(d => d.Post).WithMany(p => p.Bookmarks)
-                .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__bookmarks__post___656C112C");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Bookmarks)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__bookmarks__user___66603565");
-        });
-
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.CommentId).HasName("PK__comments__E795768707D77CCA");
+            entity.HasKey(e => e.CommentId).HasName("PK__comments__E79576877B568321");
 
             entity.ToTable("comments");
 
@@ -94,17 +67,17 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.PostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__comments__post_i__693CA210");
+                .HasConstraintName("FK__comments__post_i__6477ECF3");
 
             entity.HasOne(d => d.User).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__comments__user_i__6A30C649");
+                .HasConstraintName("FK__comments__user_i__656C112C");
         });
 
         modelBuilder.Entity<CommentLike>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.CommentId }).HasName("PK__comment___D7C7606793835CA9");
+            entity.HasKey(e => new { e.UserId, e.CommentId }).HasName("PK__comment___D7C760670B276B03");
 
             entity.ToTable("comment_likes");
 
@@ -118,17 +91,17 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Comment).WithMany(p => p.CommentLikes)
                 .HasForeignKey(d => d.CommentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__comment_l__comme__6754599E");
+                .HasConstraintName("FK__comment_l__comme__628FA481");
 
             entity.HasOne(d => d.User).WithMany(p => p.CommentLikes)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__comment_l__user___68487DD7");
+                .HasConstraintName("FK__comment_l__user___6383C8BA");
         });
 
         modelBuilder.Entity<Follow>(entity =>
         {
-            entity.HasKey(e => new { e.FollowerId, e.FolloweeId }).HasName("PK__follows__710D19E632B88689");
+            entity.HasKey(e => new { e.FollowerId, e.FolloweeId }).HasName("PK__follows__710D19E62B71F4E4");
 
             entity.ToTable("follows");
 
@@ -142,21 +115,21 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Followee).WithMany(p => p.FollowFollowees)
                 .HasForeignKey(d => d.FolloweeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__follows__followe__6C190EBB");
+                .HasConstraintName("FK__follows__followe__6754599E");
 
             entity.HasOne(d => d.Follower).WithMany(p => p.FollowFollowers)
                 .HasForeignKey(d => d.FollowerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__follows__followe__6B24EA82");
+                .HasConstraintName("FK__follows__followe__66603565");
         });
 
         modelBuilder.Entity<Hashtag>(entity =>
         {
-            entity.HasKey(e => e.HashtagId).HasName("PK__hashtags__F59C84ECBEB09B77");
+            entity.HasKey(e => e.HashtagId).HasName("PK__hashtags__F59C84EC7390BD2E");
 
             entity.ToTable("hashtags");
 
-            entity.HasIndex(e => e.HashtagName, "UQ__hashtags__47D1FA87B6272505").IsUnique();
+            entity.HasIndex(e => e.HashtagName, "UQ__hashtags__47D1FA87D9BD0468").IsUnique();
 
             entity.Property(e => e.HashtagId).HasColumnName("hashtag_id");
             entity.Property(e => e.CreatedAt)
@@ -171,7 +144,7 @@ public partial class CsdlContext : DbContext
 
         modelBuilder.Entity<Login>(entity =>
         {
-            entity.HasKey(e => e.LoginId).HasName("PK__login__C2C971DBC65465EA");
+            entity.HasKey(e => e.LoginId).HasName("PK__login__C2C971DBB7E11A59");
 
             entity.ToTable("login");
 
@@ -189,12 +162,12 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Logins)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__login__user_id__6D0D32F4");
+                .HasConstraintName("FK__login__user_id__68487DD7");
         });
 
         modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__messages__0BBF6EE6AECC327C");
+            entity.HasKey(e => e.MessageId).HasName("PK__messages__0BBF6EE64B3FE6DB");
 
             entity.ToTable("messages");
 
@@ -215,17 +188,17 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Receiver).WithMany(p => p.MessageReceivers)
                 .HasForeignKey(d => d.ReceiverId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__messages__receiv__6EF57B66");
+                .HasConstraintName("FK__messages__receiv__6A30C649");
 
             entity.HasOne(d => d.Sender).WithMany(p => p.MessageSenders)
                 .HasForeignKey(d => d.SenderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__messages__sender__6FE99F9F");
+                .HasConstraintName("FK__messages__sender__6B24EA82");
         });
 
         modelBuilder.Entity<MessagePhoto>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__message___3213E83F25C831C4");
+            entity.HasKey(e => e.Id).HasName("PK__message___3213E83FF5F2B765");
 
             entity.ToTable("message_photos");
 
@@ -238,12 +211,12 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Message).WithMany(p => p.MessagePhotos)
                 .HasForeignKey(d => d.MessageId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__message_p__messa__6E01572D");
+                .HasConstraintName("FK__message_p__messa__693CA210");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__notifica__E059842F997BA2CA");
+            entity.HasKey(e => e.NotificationId).HasName("PK__notifica__E059842F11CAA56D");
 
             entity.ToTable("notifications");
 
@@ -264,16 +237,16 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__notificat__user___70DDC3D8");
+                .HasConstraintName("FK__notificat__user___6C190EBB");
         });
 
         modelBuilder.Entity<Photo>(entity =>
         {
-            entity.HasKey(e => e.PhotoId).HasName("PK__photos__CB48C83D480C94A7");
+            entity.HasKey(e => e.PhotoId).HasName("PK__photos__CB48C83D55B99AF8");
 
             entity.ToTable("photos");
 
-            entity.HasIndex(e => e.PhotoUrl, "UQ__photos__1464808B5FF73123").IsUnique();
+            entity.HasIndex(e => e.PhotoUrl, "UQ__photos__1464808BC2C0F29B").IsUnique();
 
             entity.Property(e => e.PhotoId).HasColumnName("photo_id");
             entity.Property(e => e.CreatedAt)
@@ -290,7 +263,7 @@ public partial class CsdlContext : DbContext
 
         modelBuilder.Entity<Post>(entity =>
         {
-            entity.HasKey(e => e.PostId).HasName("PK__post__3ED78766C9F28A41");
+            entity.HasKey(e => e.PostId).HasName("PK__post__3ED787669571CCB2");
 
             entity.ToTable("post");
 
@@ -313,16 +286,16 @@ public partial class CsdlContext : DbContext
 
             entity.HasOne(d => d.Photo).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.PhotoId)
-                .HasConstraintName("FK__post__photo_id__71D1E811");
+                .HasConstraintName("FK__post__photo_id__6D0D32F4");
 
             entity.HasOne(d => d.User).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__post__user_id__72C60C4A");
+                .HasConstraintName("FK__post__user_id__6E01572D");
 
             entity.HasOne(d => d.Video).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.VideoId)
-                .HasConstraintName("FK__post__video_id__73BA3083");
+                .HasConstraintName("FK__post__video_id__6EF57B66");
 
             entity.HasMany(d => d.Hashtags).WithMany(p => p.Posts)
                 .UsingEntity<Dictionary<string, object>>(
@@ -330,14 +303,14 @@ public partial class CsdlContext : DbContext
                     r => r.HasOne<Hashtag>().WithMany()
                         .HasForeignKey("HashtagId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__post_tags__hasht__76969D2E"),
+                        .HasConstraintName("FK__post_tags__hasht__71D1E811"),
                     l => l.HasOne<Post>().WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__post_tags__post___778AC167"),
+                        .HasConstraintName("FK__post_tags__post___72C60C4A"),
                     j =>
                     {
-                        j.HasKey("PostId", "HashtagId").HasName("PK__post_tag__E18E4F284E87E1B0");
+                        j.HasKey("PostId", "HashtagId").HasName("PK__post_tag__E18E4F28DF473114");
                         j.ToTable("post_tags");
                         j.IndexerProperty<int>("PostId").HasColumnName("post_id");
                         j.IndexerProperty<int>("HashtagId").HasColumnName("hashtag_id");
@@ -346,7 +319,7 @@ public partial class CsdlContext : DbContext
 
         modelBuilder.Entity<PostLike>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.PostId }).HasName("PK__post_lik__CA534F792052BB89");
+            entity.HasKey(e => new { e.UserId, e.PostId }).HasName("PK__post_lik__CA534F7991C02275");
 
             entity.ToTable("post_likes");
 
@@ -360,25 +333,26 @@ public partial class CsdlContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.PostLikes)
                 .HasForeignKey(d => d.PostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__post_like__post___74AE54BC");
+                .HasConstraintName("FK__post_like__post___6FE99F9F");
 
             entity.HasOne(d => d.User).WithMany(p => p.PostLikes)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__post_like__user___75A278F5");
+                .HasConstraintName("FK__post_like__user___70DDC3D8");
         });
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__users__B9BE370F08E557A7");
+            entity.HasKey(e => e.UserId).HasName("PK__users__B9BE370F4FA02ED1");
 
             entity.ToTable("users");
 
-            entity.HasIndex(e => e.Username, "UQ__users__F3DBC572A52CD253").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__users__F3DBC5726DAB2F4D").IsUnique();
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.Bio)
                 .HasMaxLength(255)
+                .IsUnicode(false)
                 .HasColumnName("bio");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -389,11 +363,10 @@ public partial class CsdlContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("email");
             entity.Property(e => e.Name)
-                .HasMaxLength(30)
+                .HasMaxLength(50)
                 .HasColumnName("name");
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
-                .IsUnicode(false)
                 .HasColumnName("password");
             entity.Property(e => e.ProfilePhotoUrl)
                 .HasMaxLength(255)
@@ -412,11 +385,11 @@ public partial class CsdlContext : DbContext
 
         modelBuilder.Entity<Video>(entity =>
         {
-            entity.HasKey(e => e.VideoId).HasName("PK__videos__E8F11E104F3B5032");
+            entity.HasKey(e => e.VideoId).HasName("PK__videos__E8F11E10E0596D27");
 
             entity.ToTable("videos");
 
-            entity.HasIndex(e => e.VideoUrl, "UQ__videos__36C6F592542CA734").IsUnique();
+            entity.HasIndex(e => e.VideoUrl, "UQ__videos__36C6F592197E28E8").IsUnique();
 
             entity.Property(e => e.VideoId).HasColumnName("video_id");
             entity.Property(e => e.CreatedAt)
