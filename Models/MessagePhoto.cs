@@ -9,7 +9,7 @@ public partial class MessagePhoto
 
     public int MessageId { get; set; }
 
-    public int PhotoUrl { get; set; }
+    public string PhotoUrl { get; set; } = null!;
 
     public virtual Message Message { get; set; } = null!;
 }

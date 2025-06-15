@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BMMT_NC.Models;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BMMT_NC.Controllers
 {
@@ -21,61 +20,158 @@ namespace BMMT_NC.Controllers
         // GET: api/Post
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<Post>>> GetPosts()
+        public async Task<ActionResult<IEnumerable<object>>> GetPosts()
         {
-            return await _context.Posts
+            var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Photo)
                 .Include(p => p.Video)
                 .Include(p => p.Hashtags)
                 .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new
+                {
+                    p.PostId,
+                    p.Caption,
+                    p.Location,
+                    p.CreatedAt,
+                    User = new
+                    {
+                        p.User.UserId,
+                        p.User.Username,
+                        p.User.ProfilePhotoUrl
+                    },
+                    Photo = p.Photo != null ? new
+                    {
+                        p.Photo.PhotoId,
+                        Url = p.Photo.PhotoUrl
+                    } : null,
+                    Video = p.Video != null ? new
+                    {
+                        p.Video.VideoId,
+                        p.Video.VideoUrl
+                    } : null,
+                    Hashtags = p.Hashtags.Select(h => new
+                    {
+                        h.HashtagId,
+                        Text = h.HashtagName
+                    })
+                })
                 .ToListAsync();
+
+            return Ok(posts);
         }
 
         // GET: api/Post/5
         [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<ActionResult<Post>> GetPost(int id)
+        public async Task<ActionResult<object>> GetPost(int id)
         {
             var post = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Photo)
                 .Include(p => p.Video)
                 .Include(p => p.Hashtags)
-                .FirstOrDefaultAsync(p => p.PostId == id);
+                .Where(p => p.PostId == id)
+                .Select(p => new
+                {
+                    p.PostId,
+                    p.Caption,
+                    p.Location,
+                    p.CreatedAt,
+                    User = new
+                    {
+                        p.User.UserId,
+                        p.User.Username,
+                        p.User.ProfilePhotoUrl
+                    },
+                    Photo = p.Photo != null ? new
+                    {
+                        p.Photo.PhotoId,
+                        Url = p.Photo.PhotoUrl
+                    } : null,
+                    Video = p.Video != null ? new
+                    {
+                        p.Video.VideoId,
+                        p.Video.VideoUrl
+                    } : null,
+                    Hashtags = p.Hashtags.Select(h => new
+                    {
+                        h.HashtagId,
+                        Text = h.HashtagName
+                    })
+                })
+                .FirstOrDefaultAsync();
 
             if (post == null)
             {
                 return NotFound();
             }
 
-            return post;
+            return Ok(post);
         }
 
         // GET: api/Post/user/5
         [HttpGet("user/{userId}")]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<Post>>> GetUserPosts(int userId)
+        public async Task<ActionResult<IEnumerable<object>>> GetUserPosts(int userId)
         {
-            return await _context.Posts
+            var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Photo)
                 .Include(p => p.Video)
                 .Include(p => p.Hashtags)
                 .Where(p => p.UserId == userId)
                 .OrderByDescending(p => p.CreatedAt)
+                .Select(p => new
+                {
+                    p.PostId,
+                    p.Caption,
+                    p.Location,
+                    p.CreatedAt,
+                    User = new
+                    {
+                        p.User.UserId,
+                        p.User.Username,
+                        p.User.ProfilePhotoUrl
+                    },
+                    Photo = p.Photo != null ? new
+                    {
+                        p.Photo.PhotoId,
+                        Url = p.Photo.PhotoUrl
+                    } : null,
+                    Video = p.Video != null ? new
+                    {
+                        p.Video.VideoId,
+                        p.Video.VideoUrl
+                    } : null,
+                    Hashtags = p.Hashtags.Select(h => new
+                    {
+                        h.HashtagId,
+                        Text = h.HashtagName
+                    })
+                })
                 .ToListAsync();
+
+            return Ok(posts);
         }
 
         // POST: api/Post
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<Post>> CreatePost(Post post)
+        public async Task<ActionResult<Post>> CreatePost([FromBody] PostCreateDto postDto)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            post.UserId = userId;
-            post.CreatedAt = DateTime.Now;
-            
+
+            var post = new Post
+            {
+                Caption = postDto.Caption,
+                Location = postDto.Location,
+                PhotoId = postDto.PhotoId,
+                VideoId = postDto.VideoId,
+                UserId = userId,
+                CreatedAt = DateTime.Now
+            };
+
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
 
@@ -105,23 +201,12 @@ namespace BMMT_NC.Controllers
                 return Forbid();
             }
 
-            _context.Entry(post).State = EntityState.Modified;
+            existingPost.Caption = post.Caption;
+            existingPost.Location = post.Location;
+            existingPost.PhotoId = post.PhotoId;
+            existingPost.VideoId = post.VideoId;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PostExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -133,7 +218,7 @@ namespace BMMT_NC.Controllers
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
             var post = await _context.Posts.FindAsync(id);
-            
+
             if (post == null)
             {
                 return NotFound();
@@ -155,4 +240,12 @@ namespace BMMT_NC.Controllers
             return _context.Posts.Any(e => e.PostId == id);
         }
     }
-} 
+}
+
+public class PostCreateDto
+{
+    public string? Caption { get; set; }
+    public string? Location { get; set; }
+    public int? PhotoId { get; set; }
+    public int? VideoId { get; set; }
+}

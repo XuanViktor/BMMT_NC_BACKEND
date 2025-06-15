@@ -21,6 +21,8 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
+    public string? Token { get; set; }
+
     public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     public virtual ICollection<CommentLike> CommentLikes { get; set; } = new List<CommentLike>();

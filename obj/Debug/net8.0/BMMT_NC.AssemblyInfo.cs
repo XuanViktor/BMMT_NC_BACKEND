@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BMMT_NC")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+80c08237823b2ceee833e2855a2f58ac69e465d8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23d5f339849da50d334313f4409e909cef0f4581")]
 [assembly: System.Reflection.AssemblyProductAttribute("BMMT_NC")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BMMT_NC")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

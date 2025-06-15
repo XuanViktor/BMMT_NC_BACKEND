@@ -231,7 +231,9 @@ public partial class CsdlContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.MessageId).HasColumnName("message_id");
-            entity.Property(e => e.PhotoUrl).HasColumnName("photo_url");
+            entity.Property(e => e.PhotoUrl)
+                .HasMaxLength(255)
+                .HasColumnName("photo_url");
 
             entity.HasOne(d => d.Message).WithMany(p => p.MessagePhotos)
                 .HasForeignKey(d => d.MessageId)
@@ -398,6 +400,10 @@ public partial class CsdlContext : DbContext
                 .IsUnicode(false)
                 .HasDefaultValue("https://picsum.photos/100")
                 .HasColumnName("profile_photo_url");
+            entity.Property(e => e.Token)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("token");
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
                 .IsUnicode(false)

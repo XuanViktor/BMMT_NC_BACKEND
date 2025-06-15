@@ -23,23 +23,14 @@ namespace BMMT_NC_BACKEND.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            // Check if username already exists
             if (await _context.Users.AnyAsync(u => u.Username == model.Username))
-            {
                 return BadRequest("Username already exists");
-            }
 
-            // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email == model.Email))
-            {
                 return BadRequest("Email already exists");
-            }
 
-            // Create new user
             var user = new User
             {
                 Username = model.Username,
@@ -75,13 +66,12 @@ namespace BMMT_NC_BACKEND.Controllers
             if (user == null || user.Password != model.Password)
                 return Unauthorized("Invalid username or password");
 
-            // ✅ Tạo cookie auth
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-        new Claim(ClaimTypes.Name, user.Username),
-        new Claim(ClaimTypes.Email, user.Email ?? "")
-    };
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Email, user.Email ?? "")
+            };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
@@ -91,6 +81,10 @@ namespace BMMT_NC_BACKEND.Controllers
                 IsPersistent = true,
                 ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
             };
+
+            // Lưu token session vào DB (tuỳ chọn)
+            user.Token = Guid.NewGuid().ToString();
+            await _context.SaveChangesAsync();
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProps);
 
@@ -107,10 +101,20 @@ namespace BMMT_NC_BACKEND.Controllers
             });
         }
 
-
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int uid))
+            {
+                var user = await _context.Users.FindAsync(uid);
+                if (user != null)
+                {
+                    user.Token = null; // clear session token in DB
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok(new { message = "Logout successful" });
         }
@@ -120,9 +124,10 @@ namespace BMMT_NC_BACKEND.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
-            {
                 return Unauthorized();
-            }
+
+            if (!int.TryParse(userId, out int uid))
+                return Unauthorized();
 
             var user = await _context.Users
                 .Select(u => new
@@ -135,12 +140,10 @@ namespace BMMT_NC_BACKEND.Controllers
                     u.ProfilePhotoUrl,
                     u.CreatedAt
                 })
-                .FirstOrDefaultAsync(u => u.UserId == int.Parse(userId));
+                .FirstOrDefaultAsync(u => u.UserId == uid);
 
             if (user == null)
-            {
                 return NotFound("User not found");
-            }
 
             return Ok(user);
         }
